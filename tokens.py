@@ -5,23 +5,20 @@ import collections
 import pyunits
 import sys
 
+# 
+# There are 5 kinds of tokens:
+# NUM:    For numbers, both integral and float.
+# UNIT:   For simple units. "m" is a unit.
+# MUL:    For operators * and /
+# POW:    For exponentation (^2)
+# SUBEXP: For subexpressions, such as (a b) in c/(a b)
+# The subexpressions are a little odd to have as a token, but it was easy to
+# implement in parsley and makes the recursive processing later on a bit easier.
+#
 Token = collections.namedtuple('Token', ['name', 'value'])
 
-grammar = """
-subexp  = '(' (token | subexp)+:ts ')' ws -> Token('SUBEXP', ts)
-token   = fnumber | number | pow | op | unit
-tokens  = token+:ts -> ts
-expr = (subexp | token)+
-
-number  = <digit+>:ds ws -> Token('NUM', int(ds))
-fnumber = <digit+>:whole '.' <digit+>:dec ws -> Token('NUM', float(whole + '.' + dec))
-unit    = <letter+>:sym ws -> Token('UNIT', sym)
-op      = ('*' | '/'):sym ws -> Token('MUL', sym)
-pow     = '^' number:exp ws -> Token('POW', exp.value)
-
-"""
-
-x = parsley.makeGrammar(grammar, {'Token': Token})
+# Holds parsers (as produced by parsley.makeGrammar) for different notations
+_parsers = {}
 
 def cobble(tokens):
     power = 1
@@ -61,7 +58,22 @@ def cobble(tokens):
     return ret
 
 def parse_infix(text):
-    tokenized = x(text).expr()
+    if not 'infix' in _parsers:
+        grammar = """
+subexp  = '(' (token | subexp)+:ts ')' ws -> Token('SUBEXP', ts)
+token   = fnumber | number | pow | op | unit
+tokens  = token+:ts -> ts
+expr = (subexp | token)+
+
+number  = <digit+>:ds ws -> Token('NUM', int(ds))
+fnumber = <digit+>:whole '.' <digit+>:dec ws -> Token('NUM', float(whole + '.' + dec))
+unit    = <letter+>:sym ws -> Token('UNIT', sym)
+op      = ('*' | '/'):sym ws -> Token('MUL', sym)
+pow     = '^' number:exp ws -> Token('POW', exp.value)
+
+"""
+        _parsers['infix'] = parsley.makeGrammar(grammar, {'Token': Token})
+    tokenized = _parsers['infix'](text).expr()
     return cobble(tokenized)
 
 def testrun():
