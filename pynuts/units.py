@@ -66,14 +66,6 @@ class Datum(object):
         return self * Datum(float(self.value) / other.value, **exps)
 
     def __str__(self):
-        ret = "{0} ".format(self.value)
-
-        positives = filter(lambda x: x[1] > 0, self.units.items())
-        negatives = filter(lambda x: x[1] < 0, self.units.items())
-        
-        numerator = ''
-        denominator = ''
-
         def chain(units):
             ret = ''
             for unit, exp in units:
@@ -86,15 +78,20 @@ class Datum(object):
                 ret = '(' + ret.strip() + ')'
             return ret.strip()
 
+        positives = filter(lambda x: x[1] > 0, self.units.items())
+        negatives = filter(lambda x: x[1] < 0, self.units.items())
+        
+        numerator = ''
+        denominator = ''
+
         if len(positives) == 0:
             numerator = '1'
         else:
             numerator = chain(positives)
         if len(negatives) > 0:
             denominator = ' / ' + chain(negatives)
-        ret += '(' + numerator + denominator + ')'
 
-        return ret
+        return '{0} ({1}{2})'.format(self.value, numerator, denominator)
 
     def __repr__(self):
         ret = "Datum({0}".format(self.value)
