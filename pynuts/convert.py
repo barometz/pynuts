@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-import pyunits
 import collections
-import tokens
+
+from pynuts import units
+from pynuts import tokens
 
 Conv = collections.namedtuple('Conversion', ['frm', 'to', 'func'])
 
@@ -13,8 +14,8 @@ def factor_conv(frm, to, factor):
     return [
         Conv(frm, to, lambda x: x * factor),
         Conv(to, frm, lambda x: x / factor),
-        Conv(pyunits.Unit() / frm, pyunits.Unit() / to, lambda x: x / factor),
-        Conv(pyunits.Unit() / to, pyunits.Unit() / frm, lambda x: x * factor)
+        Conv(units.Unit() / frm, units.Unit() / to, lambda x: x / factor),
+        Conv(units.Unit() / to, units.Unit() / frm, lambda x: x * factor)
         ]
 
 def equiv_conv(frm, to):

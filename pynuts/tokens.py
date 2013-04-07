@@ -2,8 +2,9 @@
 
 import parsley
 import collections
-import pyunits
 import sys
+
+from pynuts import units
 
 # 
 # There are 5 kinds of tokens:
@@ -27,19 +28,19 @@ def cobble(tokens):
 
     """
     # lastvalue is the most recent NUM/UNIT/SUBEXP token
-    lastvalue = pyunits.Unit()
+    lastvalue = units.Unit()
     # current accumulates the current value (a plus ^2 makes a^2, etc)
-    current = pyunits.Unit()
+    current = units.Unit()
     # ret accumulates the entire return value
-    ret = pyunits.Unit()
+    ret = units.Unit()
     nextop = '*'
 
     for token in tokens:
         # Extract a Datum or Unit, if any.
         if token.name == 'NUM':
-            lastvalue = pyunits.Datum(token.value)
+            lastvalue = units.Datum(token.value)
         elif token.name == 'UNIT':
-            lastvalue = pyunits.Unit(**{token.value: 1})
+            lastvalue = units.Unit(**{token.value: 1})
         elif token.name == 'SUBEXP':
             lastvalue = cobble(token.value)
 
@@ -49,7 +50,7 @@ def cobble(tokens):
             ret *= current
             if nextop == '/':
                 # the previous token indicated division, so take the inverse
-                current = pyunits.Unit() / lastvalue
+                current = units.Unit() / lastvalue
                 nextop = '*'
             elif nextop == '*':
                 current = lastvalue
@@ -106,7 +107,7 @@ def testrun():
         ]
     for test in tests:
         result = parse_infix(test[0])
-        target = pyunits.Datum(test[1], **test[2])
+        target = units.Datum(test[1], **test[2])
         if result != target:
             print 'MISMATCH'
             print 'Source: ' + test[0]
