@@ -40,7 +40,7 @@ def load_convs(filename):
     return convs
 
 def find_convpath(convs, frm, to, seen=[]):
-    if frm == to:
+    if frm.units == to.units:
         # already there, noop.
         return []
     
@@ -57,22 +57,57 @@ def find_convpath(convs, frm, to, seen=[]):
         potentials = get_convs(convs, branch)
         for conv in potentials:
             newfrm = frm / conv.frm * conv.to
-            if not newfrm in seen:                
+            if not newfrm in seen:
                 foo = find_convpath(convs, newfrm, to, seen + [newfrm])
                 if foo != None:
                     return [conv] + foo
 
+def simplify(convs, frm, original=None, seen=[]):
+    if original is None:
+        original = frm
+        seen = [frm]
+    branches = frm.subunits()
+#    if len(list(branches)) == 0:
+#        return frm
+    for branch in branches:
+        potentials = get_convs(convs, branch)
+        for conv in potentials:
+            newfrm = frm / conv.frm * conv.to
+            if not newfrm in seen:
+                foo = simplify(convs, newfrm, original, seen + [newfrm])
+                if foo is not None and len(foo.units) < len(original.units):
+                    return foo
+                elif len(newfrm.units) < len(original.units):
+                    return newfrm
+
 convs = load_convs('data.txt')
+
+def apply_convpath(val, path):
+    for conv in path: 
+        val = conv.func(val)
+    return val
+
+def convert(convs, frm, to):
+    path = find_convpath(convs, frm, to)
+    value = apply_convpath(frm.value, path)
+    ret = units.Unit() * to
+    ret.value = value
+    return ret
 
 #path = find_convpath(convs, meter/second, kilometer/hour)
 #path = find_convpath(convs, meter, kilometer)
-path = find_convpath(convs, tokens.parse_infix('W h'), tokens.parse_infix('J'))
+#path = find_convpath(convs, tokens.parse_infix('W h'), tokens.parse_infix('J'))
+#print apply_convpath(tokens.parse_infix('2 W h'), path)
 
-val = 1
+print convert(convs, tokens.parse_infix('W h'), tokens.parse_infix('J'))
 
-for conv in path:
-    print val
-    print conv
-    val = conv.func(val)
+print "Simplify J/h:"
 
-print val
+jph = tokens.parse_infix('J/h')
+
+target = simplify(convs, jph)
+print convert(convs, jph, target)
+#path = find_convpath(convs, tokens.parse_infix('J/h'), target)
+#print path
+#print apply_convpath(tokens.parse_infix('J/h'), path)
+
