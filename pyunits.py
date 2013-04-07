@@ -1,10 +1,17 @@
 #!/usr/bin/env python
 
+import itertools
+
 def removezeroes(d):
     for k, v in d.iteritems():
         if v == 0:
             del d[k]
     
+def powerset(iterable):
+    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    s = list(iterable)
+    return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s)+1))
+
 class Datum(object):
     def __init__(self, value, **exps):
         self.value = value
@@ -13,6 +20,29 @@ class Datum(object):
         for unit, exp in exps.iteritems():
             if exp != 0:
                 self.units[unit] = exp
+
+    def subunits(self):
+        """Yield all units (compound and simple) that exist here
+
+        For example, from m^2/s this would return m, m^2, m^2/s, m/s and 1/s.
+
+        """
+        ls = []
+        for unit, exp in self.units.iteritems():
+            while exp > 0:
+                ls.append((unit, 1))
+                exp -= 1
+            while exp < 0:
+                ls.append((unit, -1))
+                exp += 1
+        combos = set(powerset(ls))
+        for combo in combos:
+            if combo == ():
+                continue
+            ret = Unit()
+            for unit in combo:
+                ret *= Unit(**{unit[0]: unit[1]})
+            yield ret
         
     def __pow__(self, other, modulo=None):
         exps = self.units.copy()
@@ -81,6 +111,10 @@ class Unit(Datum):
         super(Unit, self).__init__(1, **exps)
 
 if __name__=="__main__":
-    speed = Datum(4, m=1, s=-1)
-    time = Datum(2, s=1)
-    print(speed * time)
+#    speed = Datum(4, m=1, s=-1)
+#    time = Datum(2, s=1)
+#    print(speed * time)
+
+    unit = Datum(1, m=2, s=-1)
+    for sub in unit.subunits():
+        print sub
