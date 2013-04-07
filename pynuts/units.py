@@ -68,17 +68,32 @@ class Datum(object):
     def __str__(self):
         ret = "{0} ".format(self.value)
 
-        for unit, exp in self.units.iteritems():
-            if exp < 0:
-                if exp < -1:
-                    ret += "(1/({0}^{1}))".format(unit, -1 * exp)
+        positives = filter(lambda x: x[1] > 0, self.units.items())
+        negatives = filter(lambda x: x[1] < 0, self.units.items())
+        
+        numerator = ''
+        denominator = ''
+
+        def chain(units):
+            ret = ''
+            for unit, exp in units:
+                exp = abs(exp)
+                if exp == 1:
+                    ret += unit + ' '
                 else:
-                    ret += "(1/{0})".format(unit)
-            elif exp > 0:
-                if exp > 1:
-                    ret += "({0}^{1})".format(unit, exp)
-                else:
-                    ret += "({0})".format(unit)
+                    ret += '{0}^{1} '.format(unit, exp)
+            if len(units) > 1:
+                ret = '(' + ret.strip() + ')'
+            return ret.strip()
+
+        if len(positives) == 0:
+            numerator = '1'
+        else:
+            numerator = chain(positives)
+        if len(negatives) > 0:
+            denominator = ' / ' + chain(negatives)
+        ret += '(' + numerator + denominator + ')'
+
         return ret
 
     def __repr__(self):
@@ -113,8 +128,8 @@ class Unit(Datum):
 if __name__=="__main__":
 #    speed = Datum(4, m=1, s=-1)
 #    time = Datum(2, s=1)
-#    print(speed * time)
-
-    unit = Datum(1, m=2, s=-1)
-    for sub in unit.subunits():
-        print sub
+#    print(speed)
+    print Datum(5, K=-1, s=-1)
+#    unit = Datum(1, m=2, s=-1)
+#    for sub in unit.subunits():
+#        print sub
