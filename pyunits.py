@@ -69,9 +69,9 @@ class Datum(object):
         equality.
         """
         if self.value == other.value and self.units == other.units:
-            return true
+            return True
         else:
-            return false
+            return False
 
     def __ne__(self, other):
         return not self.value == other.value
