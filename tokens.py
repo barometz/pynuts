@@ -14,7 +14,6 @@ import sys
 # SUBEXP: For subexpressions, such as (a b) in c/(a b)
 # The subexpressions are a little odd to have as a token, but it was easy to
 # implement in parsley and makes the recursive processing later on a bit easier.
-#
 Token = collections.namedtuple('Token', ['name', 'value'])
 
 # Holds parsers (as produced by parsley.makeGrammar) for different notations
@@ -84,33 +83,34 @@ def testrun():
     
     """
     tests = [
-        ('a', 1, {'a': 1}),
-        ('a * b', 1, {'a': 1, 'b': 1}),
-        ('a* b', 1, {'a': 1, 'b': 1}),
-        ('a*b', 1, {'a': 1, 'b': 1}),
-        ('(a)*b', 1, {'a': 1, 'b': 1}),
+        ('a',       1, {'a': 1}),
+        ('a * b',   1, {'a': 1, 'b': 1}),
+        ('a* b',    1, {'a': 1, 'b': 1}),
+        ('a*b',     1, {'a': 1, 'b': 1}),
+        ('(a)*b',   1, {'a': 1, 'b': 1}),
         ('(a) * b', 1, {'a': 1, 'b': 1}),
-        ('a b^2', 1, {'a': 1, 'b': 2}),
-        ('a*b^2', 1, {'a': 1, 'b': 2}),
-        ('a/b^2', 1, {'a': 1, 'b': -2}),
+        ('a b^2',   1, {'a': 1, 'b': 2}),
+        ('a*b^2',   1, {'a': 1, 'b': 2}),
+        ('a/b^2',   1, {'a': 1, 'b': -2}),
         ('a/(b a)', 1, {'b': -1}),
-        ('a/a a', 1, {'a': 1}),
+        ('a/a a',   1, {'a': 1}),
         ('a/(a^2)', 1, {'a': -1}),
         ('a b/c c^2/b', 1, {'a': 1, 'c': 1}),
         ('a^2/(3b)', 1.0/3, {'a': 2, 'b': -1}),
         ]
     for test in tests:
         result = parse_infix(test[0])
-        if result.value != test[1] or result.units != test[2]:
+        target = pyunits.Datum(test[1], **test[2])
+        if result != target:
             print 'MISMATCH'
             print 'Source: ' + test[0]
-            print 'Target: {0} {1}'.format(test[1], test[2])
-            print 'Result: {0} {1}'.format(result.value, result.units)
+            print 'Target: ' + repr(target)
+            print 'Result: ' + repr(result)
 
 
 if __name__ == '__main__':
     if len(sys.argv) != 1:
         text = ' '.join(sys.argv[1:])
-        print parseunits(text)
+        print parse_infix(text)
     else:
         testrun()

@@ -56,6 +56,7 @@ class Datum(object):
         for unit, exp in self.units.items():
             ret += ", {0}={1}".format(unit, exp)
         ret += ")"
+        return ret
 
     def __eq__(self, other):
         """Equality test for a Datum.
@@ -71,6 +72,9 @@ class Datum(object):
             return true
         else:
             return false
+
+    def __ne__(self, other):
+        return not self.value == other.value
 
 class Unit(Datum):
     def __init__(self, **exps):
