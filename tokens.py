@@ -20,10 +20,13 @@ Token = collections.namedtuple('Token', ['name', 'value'])
 _parsers = {}
 
 def cobble(tokens):
-    power = 1
+    """Takes a bunch of tokens and turns them into a Datum.
+
+    Keeps a stack of Datum objects in a way that's slightly messy and could
+    do with a rewrite.
+
+    """
     temp = pyunits.Unit()
-    prevtoken = Token('NUM', 1)
-    current = pyunits.Unit()
     nextop = '*'
 
     unitlist = [pyunits.Unit()]
