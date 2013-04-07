@@ -26,37 +26,40 @@ def cobble(tokens):
     do with a rewrite.
 
     """
-    temp = pyunits.Unit()
+    # lastvalue is the most recent NUM/UNIT/SUBEXP token
+    lastvalue = pyunits.Unit()
+    # current accumulates the current value (a plus ^2 makes a^2, etc)
+    current = pyunits.Unit()
+    # ret accumulates the entire return value
+    ret = pyunits.Unit()
     nextop = '*'
-
-    unitlist = [pyunits.Unit()]
 
     for token in tokens:
         # Extract a Datum or Unit, if any.
         if token.name == 'NUM':
-            temp = pyunits.Datum(token.value)
+            lastvalue = pyunits.Datum(token.value)
         elif token.name == 'UNIT':
-            temp = pyunits.Unit(**{token.value: 1})
+            lastvalue = pyunits.Unit(**{token.value: 1})
         elif token.name == 'SUBEXP':
-            temp = cobble(token.value)
+            lastvalue = cobble(token.value)
 
         # Process the token
         if token.name in ['NUM', 'UNIT', 'SUBEXP']:
-            unitlist.append(pyunits.Unit())
+            # push the accumulated value to the return accumulator
+            ret *= current
             if nextop == '/':
-                unitlist[-1] /= temp
+                # the previous token indicated division, so take the inverse
+                current = pyunits.Unit() / lastvalue
                 nextop = '*'
             elif nextop == '*':
-                unitlist[-1] *= temp
+                current = lastvalue
         elif token.name == 'POW':
-            unitlist[-1] = unitlist[-1] ** token.value
+            # Raise the last NUM/UNIT/SUBEXP token to the indicated power
+            current = lastvalue ** token.value
         elif token.name == 'MUL':
             nextop = token.value
 
-    ret = pyunits.Unit()
-    for unit in unitlist:
-        ret *= unit
-
+    ret *= current
     return ret
 
 def parse_infix(text):
