@@ -2,16 +2,7 @@
 
 import pyunits
 import collections
-
-meter = pyunits.Unit(m=1)
-yard = pyunits.Unit(yd=1)
-inch = pyunits.Unit(**{'in': 1})
-centimeter = pyunits.Unit(cm=1)
-second = pyunits.Unit(s=1)
-hour = pyunits.Unit(h=1)
-kilometer = pyunits.Unit(km=1)
-watt = pyunits.Unit(W=1)
-joule = pyunits.Unit(J=1)
+import tokens
 
 Conv = collections.namedtuple('Conversion', ['frm', 'to', 'func'])
 
@@ -36,14 +27,16 @@ def get_convs(convs, frm=None, to=None):
             ret.append(conv)
     return ret
 
-convs.extend(factor_conv(meter, centimeter, 100))
-convs.extend(factor_conv(inch, centimeter, 2.54))
-convs.extend(factor_conv(yard, inch, 36))
-convs.extend(factor_conv(hour, second, 3600))
-convs.extend(factor_conv(kilometer, meter, 1000))
-convs.extend(equiv_conv(watt, joule/second))
-
-cmconv = get_convs(convs, centimeter)
+def load_convs(filename):
+    convs = []
+    with open(filename, 'r') as f:
+        for line in f:
+            parts = line.split()
+            convs.extend(factor_conv(
+                    tokens.parse_infix(parts[0]),
+                    tokens.parse_infix(parts[1]),
+                    parts[2]))
+    return convs
 
 def find_convpath(convs, frm, to, seen=[]):
     if frm == to:
@@ -68,9 +61,11 @@ def find_convpath(convs, frm, to, seen=[]):
                 if foo != None:
                     return [conv] + foo
 
+convs = load_convs('data.txt')
+
 #path = find_convpath(convs, meter/second, kilometer/hour)
 #path = find_convpath(convs, meter, kilometer)
-path = find_convpath(convs, watt * hour, joule)
+path = find_convpath(convs, tokens.parse_infix('W h'), tokens.parse_infix('J'))
 
 val = 1
 
