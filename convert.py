@@ -10,7 +10,8 @@ centimeter = pyunits.Unit(cm=1)
 second = pyunits.Unit(s=1)
 hour = pyunits.Unit(h=1)
 kilometer = pyunits.Unit(km=1)
-
+watt = pyunits.Unit(W=1)
+joule = pyunits.Unit(J=1)
 
 Conv = collections.namedtuple('Conversion', ['frm', 'to', 'func'])
 
@@ -40,14 +41,11 @@ convs.extend(factor_conv(inch, centimeter, 2.54))
 convs.extend(factor_conv(yard, inch, 36))
 convs.extend(factor_conv(hour, second, 3600))
 convs.extend(factor_conv(kilometer, meter, 1000))
+convs.extend(equiv_conv(watt, joule/second))
 
 cmconv = get_convs(convs, centimeter)
 
-#for conv in cmconv:
-#    print '{0} to {1}: {2}'.format(conv.frm, conv.to, conv.func(1))
-
-
-def find_convpath(convs, frm, to, depth=20):
+def find_convpath(convs, frm, to, seen=[]):
     if frm == to:
         # already there, noop.
         return []
@@ -60,36 +58,25 @@ def find_convpath(convs, frm, to, depth=20):
     if len(convs) == 0:
         return None
 
-    if depth <= 0:
-        return None
-
     branches = frm.subunits()
     for branch in branches:
         potentials = get_convs(convs, branch)
         for conv in potentials:
             newfrm = frm / conv.frm * conv.to
-            foo = find_convpath(convs, newfrm, to, depth - 1)
-            if foo != None:
-                return [conv] + foo
+            if not newfrm in seen:                
+                foo = find_convpath(convs, newfrm, to, seen + [newfrm])
+                if foo != None:
+                    return [conv] + foo
 
-#    potentials = get_convs(convs, frm)
-
-#    _convs = convs[:]
-#    for conv in potentials:
-#        _convs.remove(conv)
-#
-#    for conv in potentials:
-#        foo = find_convpath(_convs, conv.to, to)
-#        if foo != None:
-#            return [conv] + foo
-
-path = find_convpath(convs, meter/second, kilometer/hour)
+#path = find_convpath(convs, meter/second, kilometer/hour)
+#path = find_convpath(convs, meter, kilometer)
+path = find_convpath(convs, watt * hour, joule)
 
 val = 1
 
 for conv in path:
-#    print val
-#    print conv
+    print val
+    print conv
     val = conv.func(val)
 
 print val
