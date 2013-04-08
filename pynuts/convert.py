@@ -93,9 +93,9 @@ if __name__ == '__main__':
     
     print convert(convs, tokens.parse_infix('2 W h'), tokens.parse_infix('J'))
 
-    print "Simplify J/h:"
+    print 'Simplify 2 mol/L * N_A:'
 
-    jph = tokens.parse_infix('J/h')
+    jph = tokens.parse_infix('2 mol/L * N_A')
 
     target = simplify(convs, jph)
     print convert(convs, jph, target)

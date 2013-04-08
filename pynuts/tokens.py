@@ -73,7 +73,7 @@ expr = (subexp | token)+
 
 number  = <digit+>:ds ws -> Token('NUM', int(ds))
 fnumber = <digit+>:whole '.' <digit+>:dec ws -> Token('NUM', float(whole + '.' + dec))
-unit    = <letter+>:sym ws -> Token('UNIT', sym)
+unit    = <(letter|'_')+>:sym ws -> Token('UNIT', sym)
 op      = ('*' | '/'):sym ws -> Token('MUL', sym)
 pow     = '^' number:exp ws -> Token('POW', exp.value)
 
