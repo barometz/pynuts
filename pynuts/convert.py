@@ -18,9 +18,6 @@ def factor_conv(frm, to, factor):
         Conv(units.Unit() / to, units.Unit() / frm, lambda x: x * factor)
         ]
 
-def equiv_conv(frm, to):
-    return factor_conv(frm, to, 1)
-
 def get_convs(convs, frm=None, to=None):
     ret = []
     for conv in convs:
@@ -29,6 +26,7 @@ def get_convs(convs, frm=None, to=None):
     return ret
 
 def load_convs(filename):
+    """Read conversion factors from the given file"""
     convs = []
     with open(filename, 'r') as f:
         for line in f:
@@ -67,47 +65,37 @@ def simplify(convs, frm, original=None, seen=[]):
         original = frm
         seen = [frm]
     branches = frm.subunits()
-#    if len(list(branches)) == 0:
-#        return frm
     for branch in branches:
         potentials = get_convs(convs, branch)
         for conv in potentials:
             newfrm = frm / conv.frm * conv.to
             if not newfrm in seen:
                 foo = simplify(convs, newfrm, original, seen + [newfrm])
-                if foo is not None and len(foo.units) < len(original.units):
+                if len(foo.units) < len(original.units):
                     return foo
                 elif len(newfrm.units) < len(original.units):
                     return newfrm
-
-convs = load_convs('data.txt')
-
-def apply_convpath(val, path):
-    for conv in path: 
-        val = conv.func(val)
-    return val
+    # and if all else fails...
+    return frm
 
 def convert(convs, frm, to):
     path = find_convpath(convs, frm, to)
-    value = apply_convpath(frm.value, path)
+    value = frm.value
+    for conv in path:
+        value = conv.func(value)
     ret = units.Unit() * to
     ret.value = value
     return ret
 
-#path = find_convpath(convs, meter/second, kilometer/hour)
-#path = find_convpath(convs, meter, kilometer)
-#path = find_convpath(convs, tokens.parse_infix('W h'), tokens.parse_infix('J'))
-#print apply_convpath(tokens.parse_infix('2 W h'), path)
+if __name__ == '__main__':
+    print 'pynuts conversion demo'
+    convs = load_convs('data.txt')
+    
+    print convert(convs, tokens.parse_infix('2 W h'), tokens.parse_infix('J'))
 
-print convert(convs, tokens.parse_infix('W h'), tokens.parse_infix('J'))
+    print "Simplify J/h:"
 
-print "Simplify J/h:"
+    jph = tokens.parse_infix('J/h')
 
-jph = tokens.parse_infix('J/h')
-
-target = simplify(convs, jph)
-print convert(convs, jph, target)
-#path = find_convpath(convs, tokens.parse_infix('J/h'), target)
-#print path
-#print apply_convpath(tokens.parse_infix('J/h'), path)
-
+    target = simplify(convs, jph)
+    print convert(convs, jph, target)
