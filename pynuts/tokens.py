@@ -68,14 +68,13 @@ def parse_infix(text):
         grammar = """
 subexp  = '(' (token | subexp)+:ts ')' ws -> Token('SUBEXP', ts)
 token   = fnumber | number | pow | op | unit
-tokens  = token+:ts -> ts
 expr = (subexp | token)+
 
 number  = <digit+>:ds ws -> Token('NUM', int(ds))
 fnumber = <digit+>:whole '.' <digit+>:dec ws -> Token('NUM', float(whole + '.' + dec))
 unit    = <(letter|'_')+>:sym ws -> Token('UNIT', sym)
 op      = ('*' | '/'):sym ws -> Token('MUL', sym)
-pow     = '^' number:exp ws -> Token('POW', exp.value)
+pow     = '^' <digit+>:exp ws -> Token('POW', int(exp))
 
 """
         _parsers['infix'] = parsley.makeGrammar(grammar, {'Token': Token})
