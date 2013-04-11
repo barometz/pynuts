@@ -83,7 +83,8 @@ def simplify(convs, frm, original=None, seen=[]):
         for conv in potentials:
             newfrm = frm / conv.frm * conv.to
             if not newfrm in seen:
-                foo = simplify(convs, newfrm, original, seen + [newfrm])
+                seen.append(newfrm)
+                foo = simplify(convs, newfrm, original, seen)
                 if ucount(foo) < ucount(newfrm):
                     return foo
                 elif ucount(newfrm) < ucount(original):
