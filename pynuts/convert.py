@@ -48,75 +48,66 @@ def load_convs(filename):
                     parts[2]))
     return convs
 
-def find_convpath(convs, frm, to, seen=[]):
-    if frm.units == to.units:
-        # already there, noop.
-        return []
-    
-    direct = get_convs(convs, frm, to)
-    if len(direct) != 0:
-        # Found a single step to get directly to the target
-        return [direct[0]]
+def find_conversion_path(convs, frm, to=None, original=None, seen=[]):
+    """Find a conversion path, either to a target unit or to a simpler one.
 
-    if len(convs) == 0:
-        return None
+    When `to` is provided this recursively searches for a suitable path among
+    the conversion functions.  
+    When `to` is None, recursively search for a less complex but equivalent
+    unit.
 
-    branches = frm.subunits()
-    for branch in branches:
-        potentials = get_convs(convs, branch)
-        for conv in potentials:
-            newfrm = frm / conv.frm * conv.to
-            if not newfrm in seen:
-                foo = find_convpath(convs, newfrm, to, seen + [newfrm])
-                if foo != None:
-                    return [conv] + foo
-
-def find_simplify_path(convs, frm, original=None, seen=[]):
-    """Find a conversion path to a simplified equivalent unit.
-
-    Gets the subunits of a datum and branches out to convert all of them,
-    looking for something that ends up simpler than the source.  
-
-    Returns a tuple with a list of conversions and the Datum they'll lead to.
+    Gets the subunits of `frm` and applies whatever suitable conversion hasn't
+    been tried yet.  Rinse, recurse.  Returns a tuple containing a list of
+    conversion functions and the unit they lead to.
 
     """
-    def ucount(u):
+    def complexity(u):
+        'Complexity metric'
         return sum(abs(x) for x in u.units.values())
+
+    if to is not None:
+        # Exit conditions for targeted conversion
+        if frm.units == to.units:
+            # Reached the target, noop.
+            return ([], to)
+        direct = get_convs(convs, frm, to)
+        if len(direct) != 0:
+            # Found a single step to get to the target
+            return ([direct[0]], to)
+
     if original is None:
         original = frm
         seen = [frm]
-    branches = frm.subunits()
-    for branch in branches:
-        potentials = get_convs(convs, branch)
-        for conv in potentials:
+
+    for subunit in frm.subunits():
+        for conv in get_convs(convs, subunit):
             newfrm = frm / conv.frm * conv.to
             if not newfrm in seen:
                 seen.append(newfrm)
-                path, to = find_simplify_path(convs, newfrm, original, seen)
-                if to != newfrm and ucount(to) < ucount(newfrm):
-                    return ([conv] + path, to)
-                elif ucount(newfrm) < ucount(original):
+                path, _to = find_conversion_path(convs, newfrm, to, original, seen)
+                if (_to is not None 
+                    # Some path was found
+                    and ((to is not None and to.units == _to.units)
+                         or complexity(_to) < complexity(newfrm))):
+                    # and it's either the target or shorter than what we have
+                    return ([conv] + path, _to)
+                elif (to is None and complexity(newfrm) < complexity(original)):
+                    # Otherwise, see if what we've got is shorter than the original.
                     return ([conv], newfrm)
-    # and if all else fails...
-    return ([], frm)
+    # And if all else fails...
+    return ([], None)
 
 def convert(convs, frm, to):
-    path = find_convpath(convs, frm, to)
+    path, _to = find_conversion_path(convs, frm, to)
     value = frm.value
     for conv in path:
         value = conv.func(value)
-    ret = units.Unit() * to
+    ret = units.Unit() * _to
     ret.value = value
     return ret
 
 def simplify(convs, frm):
-    path, to = find_simplify_path(convs, frm)
-    value = frm.value
-    for conv in path:
-        value = conv.func(value)
-    ret = units.Unit() * to
-    ret.value = value
-    return ret
+    return convert(convs, frm, None)
 
 if __name__ == '__main__':
     print 'pynuts conversion demo'
