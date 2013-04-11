@@ -102,7 +102,7 @@ def convert(convs, frm, to):
     value = frm.value
     for conv in path:
         value = conv.func(value)
-    ret = units.Unit() * _to
+    ret = _to.copy()
     ret.value = value
     return ret
 

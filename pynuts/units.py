@@ -21,6 +21,12 @@ class Datum(object):
             if exp != 0:
                 self.units[unit] = exp
 
+    def copy(self):
+        ret = Datum(1)
+        ret.units = self.units.copy()
+        ret.value = self.value
+        return ret
+
     def subunits(self):
         """Yield all units (compound and simple) that exist here
 
