@@ -23,12 +23,10 @@ expressions should be provided in quotes.')
     if args.debug:
         print 'Parsed source: ' + str(time.clock() - start)
     if args.to is None:
-        target = convert.simplify(convs, frm)
+        result = convert.simplify(convs, frm)
         if args.debug:
             print 'Simplified source: ' + str(time.clock() - start)
-        print convert.convert(convs, frm, target)
-        if args.debug:
-            print 'Converted: ' + str(time.clock() - start)
+        print result
     else:
         to = tokens.parse_infix(args.to)
         if args.debug:

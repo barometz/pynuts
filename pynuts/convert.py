@@ -71,7 +71,15 @@ def find_convpath(convs, frm, to, seen=[]):
                 if foo != None:
                     return [conv] + foo
 
-def simplify(convs, frm, original=None, seen=[]):
+def find_simplify_path(convs, frm, original=None, seen=[]):
+    """Find a conversion path to a simplified equivalent unit.
+
+    Gets the subunits of a datum and branches out to convert all of them,
+    looking for something that ends up simpler than the source.  
+
+    Returns a tuple with a list of conversions and the Datum they'll lead to.
+
+    """
     def ucount(u):
         return sum(abs(x) for x in u.units.values())
     if original is None:
@@ -84,16 +92,25 @@ def simplify(convs, frm, original=None, seen=[]):
             newfrm = frm / conv.frm * conv.to
             if not newfrm in seen:
                 seen.append(newfrm)
-                foo = simplify(convs, newfrm, original, seen)
-                if ucount(foo) < ucount(newfrm):
-                    return foo
+                path, to = find_simplify_path(convs, newfrm, original, seen)
+                if to != newfrm and ucount(to) < ucount(newfrm):
+                    return ([conv] + path, to)
                 elif ucount(newfrm) < ucount(original):
-                    return newfrm
+                    return ([conv], newfrm)
     # and if all else fails...
-    return frm
+    return ([], frm)
 
 def convert(convs, frm, to):
     path = find_convpath(convs, frm, to)
+    value = frm.value
+    for conv in path:
+        value = conv.func(value)
+    ret = units.Unit() * to
+    ret.value = value
+    return ret
+
+def simplify(convs, frm):
+    path, to = find_simplify_path(convs, frm)
     value = frm.value
     for conv in path:
         value = conv.func(value)
